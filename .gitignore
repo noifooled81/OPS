@@ -56,8 +56,11 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
-# VSCode
+# .VSCode
 .vscode/
+
+# .idea
+.idea/
 
 # Private directories
 .feed_back/
