@@ -136,6 +136,14 @@ columns:
 
 ```
 
+## Data Ownership
+
+| Service | Owns | Can Read | Cannot Modify |
+|:---:|:---:|:---:|:---:|
+| Order | Orders | Payment Status | Inventory Stock |
+| Inventory | Stock, Reservations | Order Ids | Order Status |
+| Payment | Transactions | Order State | Inventory |
+
 ## Events
 - OrderInventoryReserved
 
@@ -144,6 +152,7 @@ Published by: Inventory Service -> Consumed by: Order Service & Payment Service
 ```json
 {
   "event_id": "evt_abc123",
+  "event_version": 1,
   "event_type": "INVENTORY_RESERVED",
   "timestamp": "2026-05-08T09:00:00Z",
   "data": {
@@ -161,6 +170,7 @@ Published by: Inventory Service -> Consumed by: Order
 ```json
 {
   "event_id": "evt_abc123",
+  "event_version": 1,
   "event_type": "INVENTORY_RESERVATION_FAILED",
   "timestamp": "2026-05-08T09:00:00Z",
   "data": {
@@ -177,7 +187,9 @@ Published by: Payment Service -> Consumed by: Order Service & Inventory Service
 ```json
 {
   "event_id": "evt_def456",
-  "type": "PAYMENT_SUCCESS",
+  "event_version": 1,
+  "event_type": "PAYMENT_SUCCESS",
+  "timestamp": "2026-05-08T09:00:00Z",
   "data": {
     "order_id": "ord_550e8400",
     "transaction_id": "txn_stripe_001",
@@ -194,7 +206,9 @@ Published by: Payment Service -> Consumed by: Order Service & Inventory Service
 ```json
 {
   "event_id": "evt_def456",
-  "type": "PAYMENT_SUCCESS",
+  "event_version": 1,
+  "event_type": "PAYMENT_FAILED",
+  "timestamp": "2026-05-08T09:00:00Z",
   "data": {
     "order_id": "ord_550e8400",
     "reason": "CARD_DECLINED"
