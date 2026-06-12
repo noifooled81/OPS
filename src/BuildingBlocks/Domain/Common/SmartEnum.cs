@@ -40,6 +40,7 @@ public abstract class SmartEnum<TEnum, TValue> :
 	protected SmartEnum(string name, TValue value)
 	{
 		ArgumentNullException.ThrowIfNullOrWhiteSpace(name);
+		ArgumentNullException.ThrowIfNull(value);
 
 		Name = name;
 		Value = value;

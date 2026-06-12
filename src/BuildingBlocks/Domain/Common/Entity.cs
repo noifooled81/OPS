@@ -5,20 +5,28 @@ namespace BuildingBlocks.Domain.Common;
 public abstract class Entity : IEquatable<Entity>
 {
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	//   Private Fields
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	private int? _requestedHashCode;
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   Public Properties
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-	public Guid Id { get; protected set; }
+	public Guid Id { get; protected init; }
 
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   Constructors
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	// Required for ORM / Parameterless initialization
-	protected Entity() { }
+	protected Entity()
+	{
+		Id = Guid.NewGuid();
+	}
 
 	protected Entity(Guid id)
 	{
-		Id = id;
+		Id = id == Guid.Empty ? Guid.NewGuid() : id;
 	}
 
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -43,11 +51,8 @@ public abstract class Entity : IEquatable<Entity>
 		if (other is null)
 			return false;
 
-		if (GetType() != other.GetType())
-			return false;
-
-		// Treat unpersisted/transient entities as distinct
-		if (Id == Guid.Empty || other.Id == Guid.Empty)
+		// EF Core Proxy-safe type checking
+		if (GetType().IsAssignableFrom(other.GetType()) == false && other.GetType().IsAssignableFrom(GetType()) == false)
 			return false;
 
 		return Id == other.Id;
@@ -59,5 +64,9 @@ public abstract class Entity : IEquatable<Entity>
 	public override bool Equals(object? obj)
 		=> (obj is Entity other) && Equals(other);
 
-	public override int GetHashCode() => Id.GetHashCode();
+	public override int GetHashCode()
+	{
+		_requestedHashCode ??= Id.GetHashCode();
+		return _requestedHashCode.Value;
+	}
 }

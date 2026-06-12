@@ -5,22 +5,11 @@ public abstract class AuditableEntity : Entity
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   Public Properties
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-	public DateTimeOffset CreatedAt { get; protected set; }
-	public DateTimeOffset? UpdatedAt { get; protected set; }
+	public DateTimeOffset CreatedAt { get; }
+	public DateTimeOffset? UpdatedAt { get; }
 
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   Constructors
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-	protected AuditableEntity()
-	{
-		CreatedAt = DateTimeOffset.UtcNow;
-	}
-
-	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-	//   Protected Methods
-	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-	protected void Update()
-	{
-		UpdatedAt = DateTimeOffset.UtcNow;
-	}
+	protected AuditableEntity() { }
 }
