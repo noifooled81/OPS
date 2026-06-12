@@ -50,6 +50,8 @@ public class Order : AuditableEntity
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   State Transitions
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	// --- Feature: Inventory Phase ---
 	public void StartInventoryReservation()
 	{
 		Status = Status.OnStartInventoryReservation();
@@ -62,10 +64,67 @@ public class Order : AuditableEntity
 		Version++;
 	}
 
+	public void InventoryReservationFailed()
+	{
+		Status = Status.OnInventoryReservationFailed();
+		Version++;
+	}
+
+	// --- Feature: Payment Phase ---
+	public void StartPayment()
+	{
+		Status = Status.OnStartPayment();
+		Version++;
+	}
+
 	public void PaymentValidated(Guid paymentId)
 	{
+		if (paymentId == Guid.Empty)
+			throw new ArgumentException("PaymentId cannot be empty.", nameof(paymentId));
+
 		PaymentId = paymentId;
 		Status = Status.OnPaymentValidated();
+		Version++;
+	}
+
+	public void PaymentFailed()
+	{
+		Status = Status.OnPaymentFailed();
+		Version++;
+	}
+
+	// Triggered when the 15-minute inventory reservation TTL expires
+	public void PaymentTimedOut()
+	{
+		Status = Status.OnPaymentTimeout();
+		Version++;
+	}
+
+	// --- Feature: Compensation & Finalization ---
+
+	// Triggered when the Inventory Service confirms stock has been freed.
+	public void StockReleased()
+	{
+		Status = Status.OnStockReleased();
+		Version++;
+	}
+
+	public void OrderApproved()
+	{
+		Status = Status.OnApproveOrder();
+		Version++;
+	}
+
+	public void OrderCompleted()
+	{
+		Status = Status.OnCompleteOrder();
+		Version++;
+	}
+
+	// Triggered when the Payment Service handles a late success compensation refund.
+	public void PaymentRefunded()
+	{
+		Status = Status.OnPaymentRefundedByGateway();
 		Version++;
 	}
 }
