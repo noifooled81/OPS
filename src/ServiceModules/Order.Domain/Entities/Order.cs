@@ -1,10 +1,11 @@
 using BuildingBlocks.Domain.Common;
+using BuildingBlocks.Domain.Interfaces;
 using BuildingBlocks.Domain.ValueObjects;
 using Order.Domain.Enums;
 
 namespace Order.Domain.Entities;
 
-public class Order : AuditableEntity
+public sealed class Order : Entity
 {
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   Public Properties
@@ -35,8 +36,8 @@ public class Order : AuditableEntity
 		if (idempotencyKey == Guid.Empty)
 			throw new ArgumentException("idempotencyKey must not be empty", nameof(idempotencyKey));
 
-		ArgumentNullException.ThrowIfNull(totalAmount);
-		ArgumentNullException.ThrowIfNull(shippingAddress);
+		ArgumentNullException.ThrowIfNull(totalAmount, nameof(totalAmount));
+		ArgumentNullException.ThrowIfNull(shippingAddress, nameof(shippingAddress));
 
 		CustomerId = customerId;
 		TotalAmount = totalAmount;

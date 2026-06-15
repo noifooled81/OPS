@@ -39,8 +39,8 @@ public abstract class SmartEnum<TEnum, TValue> :
 	// Protected constructor prevents creation of enums from external classes, only derived classes
 	protected SmartEnum(string name, TValue value)
 	{
-		ArgumentNullException.ThrowIfNullOrWhiteSpace(name);
-		ArgumentNullException.ThrowIfNull(value);
+		ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+		ArgumentNullException.ThrowIfNull(value, nameof(value));
 
 		Name = name;
 		Value = value;
@@ -55,7 +55,7 @@ public abstract class SmartEnum<TEnum, TValue> :
 	// Get enum from value, throw exception when not found
 	public static TEnum FromValue(TValue value)
 	{
-		ArgumentNullException.ThrowIfNull(value);
+		ArgumentNullException.ThrowIfNull(value, nameof(value));
 
 		if (_fromValue.Value.TryGetValue(value, out var result))
 			return result;
@@ -79,7 +79,7 @@ public abstract class SmartEnum<TEnum, TValue> :
 	// Get enum from name, throw exception when not found
 	public static TEnum FromName(string name)
 	{
-		ArgumentNullException.ThrowIfNullOrWhiteSpace(name);
+		ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
 		if (_fromName.Value.TryGetValue(name, out var result))
 			return result;
@@ -91,6 +91,8 @@ public abstract class SmartEnum<TEnum, TValue> :
 	// Try get enum from name, return false when not found
 	public static bool TryFromName(string name, [NotNullWhen(true)] out TEnum? result)
 	{
+		ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
 		if (String.IsNullOrWhiteSpace(name))
 		{
 			result = default;

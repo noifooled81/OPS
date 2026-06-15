@@ -15,8 +15,8 @@ public sealed record Money : IComparable<Money>
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	private Money(int amount, Currency currency)
 	{
-		ArgumentOutOfRangeException.ThrowIfNegative(amount);
-		ArgumentNullException.ThrowIfNull(currency);
+		ArgumentOutOfRangeException.ThrowIfNegative(amount, nameof(amount));
+		ArgumentNullException.ThrowIfNull(currency, nameof(currency));
 
 		Amount = amount;
 		Currency = currency;
@@ -79,7 +79,7 @@ public sealed record Money : IComparable<Money>
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	private void EnsureSameCurrency(Money other)
 	{
-		ArgumentNullException.ThrowIfNull(other);
+		ArgumentNullException.ThrowIfNull(other, nameof(other));
 
 		if (Currency != other.Currency)
 			throw new InvalidOperationException(
