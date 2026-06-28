@@ -1,5 +1,4 @@
 using BuildingBlocks.CQRS.Interfaces;
-using BuildingBlocks.Domain.Interfaces;
 
 namespace BuildingBlocks.CQRS.Handlers;
 

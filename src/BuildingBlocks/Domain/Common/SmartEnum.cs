@@ -39,7 +39,7 @@ public abstract class SmartEnum<TEnum, TValue> :
 	// Protected constructor prevents creation of enums from external classes, only derived classes
 	protected SmartEnum(string name, TValue value)
 	{
-		ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+		ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(name));
 		ArgumentNullException.ThrowIfNull(value, nameof(value));
 
 		Name = name;
@@ -79,7 +79,7 @@ public abstract class SmartEnum<TEnum, TValue> :
 	// Get enum from name, throw exception when not found
 	public static TEnum FromName(string name)
 	{
-		ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+		ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
 		if (_fromName.Value.TryGetValue(name, out var result))
 			return result;
@@ -91,9 +91,7 @@ public abstract class SmartEnum<TEnum, TValue> :
 	// Try get enum from name, return false when not found
 	public static bool TryFromName(string name, [NotNullWhen(true)] out TEnum? result)
 	{
-		ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
-
-		if (String.IsNullOrWhiteSpace(name))
+		if (string.IsNullOrWhiteSpace(name))
 		{
 			result = default;
 			return false;
@@ -128,7 +126,7 @@ public abstract class SmartEnum<TEnum, TValue> :
 	public virtual bool Equals(SmartEnum<TEnum, TValue>? other)
 	{
 		// Check if same instance
-		if (Object.ReferenceEquals(this, other))
+		if (ReferenceEquals(this, other))
 			return true;
 
 		if (other is null)
@@ -139,7 +137,7 @@ public abstract class SmartEnum<TEnum, TValue> :
 
 	public virtual int CompareTo(SmartEnum<TEnum, TValue>? other)
 	{
-		if (Object.ReferenceEquals(this, other))
+		if (ReferenceEquals(this, other))
 			return 0;
 
 		if (other is null)

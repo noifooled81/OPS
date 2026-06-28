@@ -68,3 +68,6 @@ nunit-*.xml
 # Nix direnv
 .envrc
 .direnv/
+
+# Test log directories
+.test_logs/

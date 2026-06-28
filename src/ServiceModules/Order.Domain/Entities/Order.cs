@@ -1,7 +1,7 @@
 using BuildingBlocks.Domain.Common;
-using BuildingBlocks.Domain.Interfaces;
 using BuildingBlocks.Domain.ValueObjects;
 using Order.Domain.Enums;
+using Order.Domain.Events;
 
 namespace Order.Domain.Entities;
 
@@ -18,6 +18,9 @@ public sealed class Order : Entity
 	public Guid? PaymentId { get; private set; }
 	public Address ShippingAddress { get; private set; } = null!;
 
+	private readonly List<OrderItem> _items = [];
+	public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
+
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   Constructors
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -27,7 +30,7 @@ public sealed class Order : Entity
 
 	public Order(
 		Guid customerId,
-		Money totalAmount,
+		IEnumerable<OrderItem> items,
 		Guid idempotencyKey,
 		Address shippingAddress)
 	{
@@ -36,16 +39,32 @@ public sealed class Order : Entity
 		if (idempotencyKey == Guid.Empty)
 			throw new ArgumentException("idempotencyKey must not be empty", nameof(idempotencyKey));
 
-		ArgumentNullException.ThrowIfNull(totalAmount, nameof(totalAmount));
+		ArgumentNullException.ThrowIfNull(items, nameof(items));
 		ArgumentNullException.ThrowIfNull(shippingAddress, nameof(shippingAddress));
 
+		var itemList = items.ToList();
+		ArgumentOutOfRangeException.ThrowIfZero(itemList.Count, nameof(items));
+
 		CustomerId = customerId;
-		TotalAmount = totalAmount;
+		_items.AddRange(itemList);
 		IdempotencyKey = idempotencyKey;
 		ShippingAddress = shippingAddress;
 
+		// Calculate TotalAmount dynamically ensuring same currency
+		var currency = itemList[0].UnitPrice.Currency;
+		int totalSum = 0;
+		foreach (var item in itemList)
+		{
+			if (item.UnitPrice.Currency != currency)
+				throw new InvalidOperationException("All items in an order must use the same currency.");
+			totalSum += item.UnitPrice.Amount * item.Quantity;
+		}
+
+		TotalAmount = Money.Create(totalSum, currency);
 		Status = OrderStatus.Created;
 		Version = 1;
+
+		AddDomainEvent(new OrderCreatedDomainEvent(Id, CustomerId, IdempotencyKey));
 	}
 
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

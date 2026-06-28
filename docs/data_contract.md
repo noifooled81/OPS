@@ -38,14 +38,38 @@ columns:
 
 ```
 
+```yaml
+entity: OrderItem
+columns:
+  - name: id
+    type: UUID (PK)
+    description: Order Item ID.
+  - name: order_id
+    type: UUID
+    description: Order ID.
+  - name: product_sku
+    type: VARCHAR
+    description: The unique product identifier.
+  - name: quantity
+    type: INT
+    description: How many.
+  - name: unit_price
+    type: INT
+    description: Unit price of product.
+    
+```
+
 ## Inventory Service Schema
 
 ```yaml
 entity: Inventory
 columns:
-  - name: sku_id
+  - name: product_sku
     type: VARCHAR (PK)
     description: The unique product identifier.
+  - name: unit_price
+    type: INT
+    description: Unit price of product.
   - name: available_stock
     type: INT
     description: Stock ready for sale.
@@ -64,7 +88,7 @@ columns:
   - name: order_id
     type: UUID
     description: The link back to the Order Service.
-  - name: sku_id
+  - name: product_sku
     type: VARCHAR
     description: What is being held.
   - name: quantity

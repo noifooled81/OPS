@@ -1,5 +1,3 @@
-using System;
-
 namespace BuildingBlocks.Domain.Common;
 
 public abstract class Entity : IEquatable<Entity>
@@ -13,6 +11,24 @@ public abstract class Entity : IEquatable<Entity>
 	//   Public Properties
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	public Guid Id { get; protected init; }
+
+	private readonly List<Interfaces.IDomainEvent> _domainEvents = [];
+	public IReadOnlyCollection<Interfaces.IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+
+	public void AddDomainEvent(Interfaces.IDomainEvent eventItem)
+	{
+		_domainEvents.Add(eventItem);
+	}
+
+	public void RemoveDomainEvent(Interfaces.IDomainEvent eventItem)
+	{
+		_domainEvents.Remove(eventItem);
+	}
+
+	public void ClearDomainEvents()
+	{
+		_domainEvents.Clear();
+	}
 
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   Constructors
@@ -45,7 +61,7 @@ public abstract class Entity : IEquatable<Entity>
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	public bool Equals(Entity? other)
 	{
-		if (Object.ReferenceEquals(this, other))
+		if (ReferenceEquals(this, other))
 			return true;
 
 		if (other is null)

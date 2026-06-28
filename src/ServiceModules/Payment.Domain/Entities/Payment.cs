@@ -27,6 +27,7 @@ public sealed class Payment : Entity
 	{
 		if (orderId == Guid.Empty)
 			throw new ArgumentException("orderId must not be empty", nameof(orderId));
+
 		ArgumentNullException.ThrowIfNull(amount, nameof(amount));
 		ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey, nameof(idempotencyKey));
 

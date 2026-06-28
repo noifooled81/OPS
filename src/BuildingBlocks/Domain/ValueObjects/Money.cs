@@ -10,6 +10,10 @@ public sealed record Money : IComparable<Money>
 	public int Amount { get; init; } // Price in smallest unit to avoid floating-point errors
 	public Currency Currency { get; init; }
 
+	public decimal AmountMajor =>
+		// Convert minor units back to decimal if currency is USD
+		Currency == Currency.Usd ? Amount / 100m : Amount;
+
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   Constructors
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
