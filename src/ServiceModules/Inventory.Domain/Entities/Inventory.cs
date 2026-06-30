@@ -1,3 +1,4 @@
+using BuildingBlocks.Domain.ValueObjects;
 using Inventory.Domain.Enums;
 
 namespace Inventory.Domain.Entities;
@@ -8,6 +9,7 @@ public sealed class Inventory
 	//   Public Properties
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	public string ProductSku { get; private init; } = null!;
+	public List<Money> UnitPrices { get; private set; } = null!;
 	public int AvailableStock { get; private set; }
 	public int ReservedStock { get; private set; }
 
@@ -16,13 +18,15 @@ public sealed class Inventory
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	private Inventory() { }
 
-	public Inventory(string productSku, int availableStock, int reservedStock)
+	public Inventory(string productSku, List<Money> unitPrices, int availableStock, int reservedStock)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(productSku, nameof(productSku));
+		ArgumentNullException.ThrowIfNull(unitPrices, nameof(unitPrices));
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(availableStock, nameof(availableStock));
 		ArgumentOutOfRangeException.ThrowIfNegative(reservedStock, nameof(reservedStock));
 
 		ProductSku = productSku;
+		UnitPrices = unitPrices;
 		AvailableStock = availableStock;
 		ReservedStock = reservedStock;
 	}

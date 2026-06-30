@@ -16,6 +16,7 @@ public sealed class Order : Entity
 	public Guid IdempotencyKey { get; private set; }
 	public uint Version { get; private set; }
 	public Guid? PaymentId { get; private set; }
+	public Address BillingAddress { get; private set; } = null!;
 	public Address ShippingAddress { get; private set; } = null!;
 
 	private readonly List<OrderItem> _items = [];
@@ -32,6 +33,7 @@ public sealed class Order : Entity
 		Guid customerId,
 		IEnumerable<OrderItem> items,
 		Guid idempotencyKey,
+		Address billingAddress,
 		Address shippingAddress)
 	{
 		if (customerId == Guid.Empty)
@@ -40,6 +42,7 @@ public sealed class Order : Entity
 			throw new ArgumentException("idempotencyKey must not be empty", nameof(idempotencyKey));
 
 		ArgumentNullException.ThrowIfNull(items, nameof(items));
+		ArgumentNullException.ThrowIfNull(billingAddress, nameof(billingAddress));
 		ArgumentNullException.ThrowIfNull(shippingAddress, nameof(shippingAddress));
 
 		var itemList = items.ToList();
@@ -48,6 +51,7 @@ public sealed class Order : Entity
 		CustomerId = customerId;
 		_items.AddRange(itemList);
 		IdempotencyKey = idempotencyKey;
+		BillingAddress = billingAddress;
 		ShippingAddress = shippingAddress;
 
 		// Calculate TotalAmount dynamically ensuring same currency
@@ -63,88 +67,56 @@ public sealed class Order : Entity
 		TotalAmount = Money.Create(totalSum, currency);
 		Status = OrderStatus.Created;
 		Version = 1;
-
-		AddDomainEvent(new OrderCreatedDomainEvent(Id, CustomerId, IdempotencyKey));
 	}
 
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	//   State Transitions
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-	// --- Feature: Inventory Phase ---
-	public void StartInventoryReservation()
+	public void StartProcessing()
 	{
-		Status = Status.OnStartInventoryReservation();
+		if (Status != OrderStatus.Created)
+			throw new InvalidOperationException("Can only process newly created orders.");
+
+		Status = Status.Process();
 		Version++;
+
+		AddDomainEvent(new OrderProcessingStartedDomainEvent(
+			Id,
+			CustomerId,
+			IdempotencyKey,
+			Items.Select(item =>
+				new OrderEventItem(
+					item.ProductSku,
+					item.Quantity,
+					item.UnitPrice
+				)
+			).ToList(),
+			TotalAmount,
+			BillingAddress,
+			ShippingAddress
+			));
 	}
 
-	public void InventoryReserved()
-	{
-		Status = Status.OnInventoryReserved();
-		Version++;
-	}
-
-	public void InventoryReservationFailed()
-	{
-		Status = Status.OnInventoryReservationFailed();
-		Version++;
-	}
-
-	// --- Feature: Payment Phase ---
-	public void StartPayment()
-	{
-		Status = Status.OnStartPayment();
-		Version++;
-	}
-
-	public void PaymentValidated(Guid paymentId)
+	public void Approve(Guid paymentId)
 	{
 		if (paymentId == Guid.Empty)
 			throw new ArgumentException("PaymentId cannot be empty.", nameof(paymentId));
 
 		PaymentId = paymentId;
-		Status = Status.OnPaymentValidated();
+
+		Status = Status.Approve();
 		Version++;
 	}
 
-	public void PaymentFailed()
+	public void Complete()
 	{
-		Status = Status.OnPaymentFailed();
+		Status = Status.Complete();
 		Version++;
 	}
 
-	// Triggered when the 15-minute inventory reservation TTL expires
-	public void PaymentTimedOut()
+	public void Cancel()
 	{
-		Status = Status.OnPaymentTimeout();
-		Version++;
-	}
-
-	// --- Feature: Compensation & Finalization ---
-
-	// Triggered when the Inventory Service confirms stock has been freed.
-	public void StockReleased()
-	{
-		Status = Status.OnStockReleased();
-		Version++;
-	}
-
-	public void OrderApproved()
-	{
-		Status = Status.OnApproveOrder();
-		Version++;
-	}
-
-	public void OrderCompleted()
-	{
-		Status = Status.OnCompleteOrder();
-		Version++;
-	}
-
-	// Triggered when the Payment Service handles a late success compensation refund.
-	public void PaymentRefunded()
-	{
-		Status = Status.OnPaymentRefundedByGateway();
+		Status = Status.Cancel();
 		Version++;
 	}
 }

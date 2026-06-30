@@ -67,7 +67,7 @@ columns:
   - name: product_sku
     type: VARCHAR (PK)
     description: The unique product identifier.
-  - name: unit_price
+  - name: unit_prices
     type: INT
     description: Unit price of product.
   - name: available_stock
@@ -133,6 +133,7 @@ columns:
 ```
 
 ## Shared Schema
+
 ```yaml
 entity: MessageRelay
 columns:
@@ -150,7 +151,7 @@ columns:
     description: The full message data.
   - name: status
     type: SMALLINT
-    description: 0 (Pending), 1 (Sent), 2 (Failed).
+    description: 0 (Pending), 1 (Processing), 2 (Sent), 3 (Failed).
   - name: attempts
     type: INT
     description: Track retries for the Relay worker.
@@ -169,6 +170,7 @@ columns:
 | Payment | Transactions | Order State | Inventory |
 
 ## Events
+
 - OrderInventoryReserved
 
 Published by: Inventory Service -> Consumed by: Order Service & Payment Service

@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Order.Domain\Order.Domain.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\CQRS\BuildingBlocks.CQRS.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Messaging\BuildingBlocks.Messaging.csproj" />
   </ItemGroup>
 
   <ItemGroup>

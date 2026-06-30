@@ -1,13 +1,17 @@
 using BuildingBlocks.Domain.Interfaces;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Order.Application.Commands.CreateOrder;
-using Order.Application.Common.DTOs;
 using Order.Domain.Repositories;
 using Xunit;
 using OrderEntity = Order.Domain.Entities.Order;
 using OrderStatus = Order.Domain.Enums.OrderStatus;
+using OrderItemCommandDto = Order.Application.Commands.Dtos.OrderItemCommandDto;
+using BuildingBlocks.Domain.ValueObjects;
+using BuildingBlocks.Domain.Enums;
+using Order.Application.Clients.Interfaces;
+using Order.Application.Clients.Dtos;
+using Microsoft.Extensions.Logging;
 
 namespace Order.Commands.Tests;
 
@@ -15,6 +19,7 @@ public sealed class CreateOrderCommandHandlerTests
 {
 	private readonly Mock<IUnitOfWork> _unitOfWorkMock;
 	private readonly Mock<IOrderRepository> _orderRepositoryMock;
+	private readonly Mock<IInventoryServiceClient> _inventoryServiceClientMock;
 	private readonly Mock<ILogger<CreateOrderCommandHandler>> _loggerMock;
 	private readonly CreateOrderCommandHandler _handler;
 	private readonly CancellationToken _ct;
@@ -23,14 +28,25 @@ public sealed class CreateOrderCommandHandlerTests
 	{
 		_unitOfWorkMock = new Mock<IUnitOfWork>();
 		_orderRepositoryMock = new Mock<IOrderRepository>();
+		_inventoryServiceClientMock = new Mock<IInventoryServiceClient>();
 		_loggerMock = new Mock<ILogger<CreateOrderCommandHandler>>();
 
 		_handler = new CreateOrderCommandHandler(
 			_unitOfWorkMock.Object,
 			_orderRepositoryMock.Object,
+			_inventoryServiceClientMock.Object,
 			_loggerMock.Object);
 
 		_ct = CancellationToken.None;
+
+		// Default mock setup for pricing client
+		_inventoryServiceClientMock
+			.Setup(c => c.GetProductPricesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync((IEnumerable<string> skus, string cur, CancellationToken ct) =>
+			{
+				var currency = Currency.FromName(cur);
+				return skus.Select(s => new ProductPriceDto(s, Money.Create(1000, currency))).ToList();
+			});
 	}
 
 	[Fact]
@@ -55,8 +71,8 @@ public sealed class CreateOrderCommandHandlerTests
 
 		capturedOrder.CustomerId.Should().Be(command.CustomerId);
 		capturedOrder.IdempotencyKey.Should().Be(command.IdempotencyKey);
-		capturedOrder.Status.Should().Be(OrderStatus.Created);
-		capturedOrder.Version.Should().Be(1);
+		capturedOrder.Status.Should().Be(OrderStatus.Processing); // Since running StartProcessing() after order creation
+		capturedOrder.Version.Should().Be(2); // Since running StartProcessing() after order creation
 
 		_orderRepositoryMock.Verify(r => r.AddAsync(capturedOrder, _ct), Times.Once);
 		_unitOfWorkMock.Verify(u => u.SaveChangesAsync(_ct), Times.Once);
@@ -69,8 +85,15 @@ public sealed class CreateOrderCommandHandlerTests
 			currency: "USD",
 			items:
 			[
-				new OrderItemDto("SKU-001", 2, 19.99m),
-				new OrderItemDto("SKU-002", 1,  5.50m),
+				new OrderItemCommandDto("SKU-001", 2),
+				new OrderItemCommandDto("SKU-002", 1),
+			]);
+
+		_inventoryServiceClientMock
+			.Setup(c => c.GetProductPricesAsync(It.IsAny<IEnumerable<string>>(), "USD", _ct))
+			.ReturnsAsync([
+				new ProductPriceDto("SKU-001", Money.Create(1999, Currency.Usd)),
+				new ProductPriceDto("SKU-002", Money.Create(550, Currency.Usd))
 			]);
 
 		OrderEntity? capturedOrder = null;
@@ -97,8 +120,15 @@ public sealed class CreateOrderCommandHandlerTests
 			currency: "VND",
 			items:
 			[
-				new OrderItemDto("SKU-001", 1, 15000m),
-				new OrderItemDto("SKU-002", 2,  2500m),
+				new OrderItemCommandDto("SKU-001", 1),
+				new OrderItemCommandDto("SKU-002", 2),
+			]);
+
+		_inventoryServiceClientMock
+			.Setup(c => c.GetProductPricesAsync(It.IsAny<IEnumerable<string>>(), "VND", _ct))
+			.ReturnsAsync([
+				new ProductPriceDto("SKU-001", Money.Create(15000, Currency.Vnd)),
+				new ProductPriceDto("SKU-002", Money.Create(2500, Currency.Vnd))
 			]);
 
 		OrderEntity? capturedOrder = null;
@@ -135,7 +165,7 @@ public sealed class CreateOrderCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_ShouldRaiseOrderCreatedDomainEvent()
+	public async Task Handle_ShouldRaiseInventoryReservationStartedDomainEvent()
 	{
 		var command = CreateCommand();
 
@@ -152,31 +182,7 @@ public sealed class CreateOrderCommandHandlerTests
 
 		capturedOrder!.DomainEvents.Should().ContainSingle();
 		var domainEvent = capturedOrder.DomainEvents.Single();
-		domainEvent.Should().BeOfType<Order.Domain.Events.OrderCreatedDomainEvent>();
-	}
-
-	[Fact]
-	public async Task Handle_ShouldLogInformation_WhenOrderCreated()
-	{
-		var command = CreateCommand();
-
-		_orderRepositoryMock
-			.Setup(r => r.AddAsync(It.IsAny<OrderEntity>(), _ct))
-			.Returns(Task.CompletedTask);
-		_unitOfWorkMock
-			.Setup(u => u.SaveChangesAsync(_ct))
-			.ReturnsAsync(1);
-
-		await _handler.Handle(command, _ct);
-
-		_loggerMock.Verify(
-			x => x.Log(
-				LogLevel.Information,
-				It.IsAny<EventId>(),
-				It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("created")),
-				It.IsAny<Exception>(),
-				It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-			Times.Once);
+		domainEvent.Should().BeOfType<Domain.Events.OrderProcessingStartedDomainEvent>(); // Since running StartProcessing() after order creation
 	}
 
 	[Fact]
@@ -269,11 +275,11 @@ public sealed class CreateOrderCommandHandlerTests
 
 	private static CreateOrderCommand CreateCommand(
 		string currency = "USD",
-		List<OrderItemDto>? items = null)
+		List<OrderItemCommandDto>? items = null)
 	{
 		items ??=
 		[
-			new OrderItemDto("SKU-001", 1, 10.00m),
+			new OrderItemCommandDto("SKU-001", 1),
 		];
 
 		return new CreateOrderCommand(
@@ -281,9 +287,13 @@ public sealed class CreateOrderCommandHandlerTests
 			Currency: currency,
 			Items: items,
 			IdempotencyKey: Guid.NewGuid(),
-			Street: "123 Main St",
-			City: "Springfield",
-			ZipCode: "12345",
-			Country: "USA");
+			BillingStreet: "123 Main St",
+			BillingCity: "Springfield",
+			BillingZipCode: "12345",
+			BillingCountry: "USA",
+			ShippingStreet: "123 Main St",
+			ShippingCity: "Springfield",
+			ShippingZipCode: "12345",
+			ShippingCountry: "USA");
 	}
 }

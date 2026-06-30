@@ -29,6 +29,7 @@ public sealed class GetOrderQueryHandlerTests
 	[Fact]
 	public async Task Handle_WhenOrderIdIsValid_ReturnsDto()
 	{
+		var address = new Address("123 Main St", "Springfield", "12345", "USA");
 		var order = new OrderEntity(
 			Guid.NewGuid(),
 			[
@@ -44,7 +45,8 @@ public sealed class GetOrderQueryHandlerTests
 				),
 			],
 			Guid.NewGuid(),
-			new Address("123 Main St", "Springfield", "12345", "USA")
+			address,
+			address
 		);
 
 		_orderRepositoryMock

@@ -1,10 +1,10 @@
-namespace Order.Application.Common.DTOs;
+namespace Order.Application.Queries.Dtos;
 
-public record OrderDto(
+public record OrderQueryDto(
 	Guid Id,
 	Guid CustomerId,
 	string Status,
-	List<OrderItemDto> Items,
+	List<OrderItemQueryDto> Items,
 	decimal TotalAmount,
 	string Currency,
 	string Street,

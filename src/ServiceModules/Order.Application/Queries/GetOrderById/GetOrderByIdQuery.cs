@@ -1,6 +1,6 @@
 using BuildingBlocks.CQRS.Interfaces;
-using Order.Application.Common.DTOs;
+using Order.Application.Queries.Dtos;
 
 namespace Order.Application.Queries.GetOrderById;
 
-public record GetOrderByIdQuery(Guid OrderId) : IQuery<OrderDto?>;
+public record GetOrderByIdQuery(Guid OrderId) : IQuery<OrderQueryDto?>;

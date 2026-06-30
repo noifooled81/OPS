@@ -71,3 +71,6 @@ nunit-*.xml
 
 # Test log directories
 .test_logs/
+
+# .temp
+.temp/

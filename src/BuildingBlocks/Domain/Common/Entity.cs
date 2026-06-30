@@ -25,6 +25,12 @@ public abstract class Entity : IEquatable<Entity>
 		_domainEvents.Remove(eventItem);
 	}
 
+	// Remove all events of a specific type
+	public void RemoveDomainEventsOfType<TEvent>() where TEvent : Interfaces.IDomainEvent
+	{
+		_domainEvents.RemoveAll(e => e is TEvent);
+	}
+
 	public void ClearDomainEvents()
 	{
 		_domainEvents.Clear();
